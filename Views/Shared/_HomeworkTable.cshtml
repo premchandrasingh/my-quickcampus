@@ -1,0 +1,53 @@
+﻿@model My.QuickCampus.QuickCampus.QuickCampusApiResponse
+
+<table class="tftable" border="1">
+    <tr>
+        <th>Date</th>
+        <th>Subject</th>
+        <th>Type</th>
+        <th>Title</th>
+        <th></th>
+        <th>Images</th>
+        <th>Docs</th>
+    </tr>
+
+    @for (var i = 0; i < Model.Data.Count(); i++)
+    {
+        <tr class="@(i % 2 == 0 ? "highlight" : "")">
+            <td width="100">@Model.Data[i].PostedDate</td>
+            <td>@Model.Data[i].SubjectName</td>
+            <td>@Model.Data[i].Type</td>
+            <td>@Model.Data[i].Title</td>
+            <td class="desc">@Model.Data[1].Body</td>
+            <td>
+                @if (Model.Data[i].Images != null && Model.Data[i].Images.Any())
+                {
+                    <ol>
+                        @foreach (var image in Model.Data[1].Images)
+                        {
+                            <li>
+                                <button type="submit" class="btn btn-link">
+                                    <i class="bi bi-image"></i> View Image
+                                </button>
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@image" target="_blank"><i class="bi bi-image"></i> View Image</a>
+                            </li>
+
+                        }
+                    </ol>
+                }
+            </td>
+            <td>
+                @if (Model.Data[i].Documents != null && Model.Data[i].Documents.Any())
+                {
+                    <ol>
+                        @foreach (var doc in Model.Data[i].Documents)
+                        {
+                            @* <li><a href="@image.Link" target="_blank">@image.Label</a></li> *@
+                            <li>@doc</li>
+                        }
+                    </ol>
+                }
+            </td>
+        </tr>
+    }
+</table>
