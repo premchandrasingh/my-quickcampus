@@ -1,7 +1,9 @@
-﻿@model My.QuickCampus.QuickCampus.QuickCampusApiResponse
+﻿@using My.QuickCampus.QuickCampus;
+@model My.QuickCampus.QuickCampus.QuickCampusApiResponse
 
 <table class="tftable" border="1">
     <tr>
+        <th>Sl.</th>
         <th>Date</th>
         <th>Subject</th>
         <th>Type</th>
@@ -14,22 +16,23 @@
     @for (var i = 0; i < Model.Data.Count(); i++)
     {
         <tr class="@(i % 2 == 0 ? "highlight" : "")">
+            <td>@(i + 1)</td>
             <td width="100">@Model.Data[i].PostedDate</td>
             <td>@Model.Data[i].SubjectName</td>
             <td>@Model.Data[i].Type</td>
             <td>@Model.Data[i].Title</td>
-            <td class="desc">@Model.Data[1].Body</td>
+            <td class="desc">@Model.Data[i].Body</td>
             <td>
                 @if (Model.Data[i].Images != null && Model.Data[i].Images.Any())
                 {
                     <ol>
-                        @foreach (var image in Model.Data[1].Images)
+                        @for (var j = 0; j < Model.Data[i].Images.Count(); j++)
                         {
                             <li>
-                                <button type="submit" class="btn btn-link">
-                                    <i class="bi bi-image"></i> View Image
-                                </button>
-                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@image" target="_blank"><i class="bi bi-image"></i> View Image</a>
+                                @{
+                                    var imageFileName = @Model.Data[i].GetDownloadInfo(Model.Data[i].Images[j], j + 1);
+                                }
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@imageFileName" target="_blank" title="@imageFileName"><i class="bi bi-image"></i> View Image</a>
                             </li>
 
                         }
@@ -40,10 +43,14 @@
                 @if (Model.Data[i].Documents != null && Model.Data[i].Documents.Any())
                 {
                     <ol>
-                        @foreach (var doc in Model.Data[i].Documents)
+                        @for (var j = 0; j < Model.Data[i].Documents.Count(); j++)
                         {
-                            @* <li><a href="@image.Link" target="_blank">@image.Label</a></li> *@
-                            <li>@doc</li>
+                            <li>
+                                @{
+                                    var docFileName = @Model.Data[i].GetDownloadInfo(Model.Data[i].Documents[j], j + 1);
+                                }
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@docFileName" title="@docFileName" target="_blank"><i class="bi bi-image"></i> View Doc</a>
+                            </li>
                         }
                     </ol>
                 }

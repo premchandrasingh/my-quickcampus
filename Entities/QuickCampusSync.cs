@@ -4,6 +4,8 @@
     {
         public long QuickCampusSyncId { get; set; }
 
+        public long GradeId { get; set; }
+
         /// <summary>
         /// Month of the source data being synced.
         /// </summary>
@@ -23,6 +25,7 @@
         /// </summary>
         public string SyncType { get; set; } = string.Empty;
 
+
         public DateTime SyncDateTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
@@ -38,5 +41,8 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public Grade Grade { get; set; }
+
     }
 }

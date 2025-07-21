@@ -1,5 +1,6 @@
 using My.QuickCampus;
 using My.QuickCampus.Data;
+using My.QuickCampus.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

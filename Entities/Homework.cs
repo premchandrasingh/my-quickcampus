@@ -8,6 +8,10 @@ namespace My.QuickCampus.Entities
 
         public long GradeId { get; set; }
 
+        public int Year { get; set; }
+
+        public int Month { get; set; }
+
         #region QuickCampus Fields
         /// <summary>
         /// Uid
@@ -21,7 +25,7 @@ namespace My.QuickCampus.Entities
 
         public string SubjectName { get; set; }
 
-        public string PostedDate { get; set; }
+        public DateOnly PostedDate { get; set; }
 
         public string Body { get; set; }
 
@@ -55,7 +59,7 @@ namespace My.QuickCampus.Entities
 
         #endregion
 
-        public List<MediaFile> MediaFiles { get; set; }
+        public List<MediaFile> MediaFiles { get; set; } = new List<MediaFile>();
 
 
         public Grade Grade { get; set; }

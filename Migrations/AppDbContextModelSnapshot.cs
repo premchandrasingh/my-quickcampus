@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using My.QuickCampus.Data;
 
@@ -10,12 +9,10 @@ using My.QuickCampus.Data;
 
 namespace My.QuickCampus.Migrations
 {
-    [DbContext(typeof(SqliteDbContext))]
-    [Migration("20250709061501_Initial")]
-    partial class Initial
+    [DbContext(typeof(AppDbContext))]
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.18");
@@ -50,7 +47,10 @@ namespace My.QuickCampus.Migrations
                     b.Property<long>("GradeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PostedDate")
+                    b.Property<int>("Month")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("PostedDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("QuickCampusCreatedBy")
@@ -84,6 +84,9 @@ namespace My.QuickCampus.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("AssignmentId")
                         .HasName("PK_Assignment_AssignmentId");
 
@@ -99,7 +102,14 @@ namespace My.QuickCampus.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCurrentClass")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -153,7 +163,10 @@ namespace My.QuickCampus.Migrations
                     b.Property<long>("GradeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PostedDate")
+                    b.Property<int>("Month")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("PostedDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("QuickCampusCreatedBy")
@@ -186,6 +199,9 @@ namespace My.QuickCampus.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("HomeworkId")
                         .HasName("PK_Homework_HomeworkId");
@@ -253,6 +269,9 @@ namespace My.QuickCampus.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("GradeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
@@ -276,6 +295,8 @@ namespace My.QuickCampus.Migrations
 
                     b.HasKey("QuickCampusSyncId")
                         .HasName("PK_QuickCampusSync_QuickCampusSyncId");
+
+                    b.HasIndex("GradeId");
 
                     b.ToTable("QuickCampusSync", (string)null);
                 });
@@ -319,6 +340,8 @@ namespace My.QuickCampus.Migrations
                     b.HasOne("My.QuickCampus.Entities.Grade", "Grade")
                         .WithMany("Assignments")
                         .HasForeignKey("GradeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("FK_Assignment_Grade_GradeId");
 
                     b.Navigation("Grade");
@@ -341,6 +364,8 @@ namespace My.QuickCampus.Migrations
                     b.HasOne("My.QuickCampus.Entities.Grade", "Grade")
                         .WithMany("Homeworks")
                         .HasForeignKey("GradeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("FK_Homework_Grade_GradeId");
 
                     b.Navigation("Grade");
@@ -351,20 +376,28 @@ namespace My.QuickCampus.Migrations
                     b.HasOne("My.QuickCampus.Entities.Assignment", "Assignment")
                         .WithMany("MediaFiles")
                         .HasForeignKey("MediaFileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_MediaFile_Assignment_MediaFileId");
 
                     b.HasOne("My.QuickCampus.Entities.Homework", "Homework")
                         .WithMany("MediaFiles")
                         .HasForeignKey("MediaFileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_MediaFile_Homework_MediaFileId");
 
                     b.Navigation("Assignment");
 
                     b.Navigation("Homework");
+                });
+
+            modelBuilder.Entity("My.QuickCampus.Entities.QuickCampusSync", b =>
+                {
+                    b.HasOne("My.QuickCampus.Entities.Grade", "Grade")
+                        .WithMany("QuickCampusSyncs")
+                        .HasForeignKey("GradeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_QuickCampusSync_Grade_GradeId");
+
+                    b.Navigation("Grade");
                 });
 
             modelBuilder.Entity("My.QuickCampus.Entities.Assignment", b =>
@@ -377,6 +410,8 @@ namespace My.QuickCampus.Migrations
                     b.Navigation("Assignments");
 
                     b.Navigation("Homeworks");
+
+                    b.Navigation("QuickCampusSyncs");
                 });
 
             modelBuilder.Entity("My.QuickCampus.Entities.Homework", b =>

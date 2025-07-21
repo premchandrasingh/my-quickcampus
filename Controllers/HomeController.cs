@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using My.QuickCampus.Models;
+using My.QuickCampus.QuickCampus;
+using My.QuickCampus.Services;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace My.QuickCampus.Controllers
 {
@@ -43,22 +46,73 @@ namespace My.QuickCampus.Controllers
             return View(assigments);
         }
 
-        public IActionResult DownloadFile(string value)
+        public IActionResult DownloadFile(string filename)
         {
-            return Redirect(value ?? "/");
+            return Redirect(filename ?? "/");
         }
 
 
         public async Task<IActionResult> ViewFile(string filename)
         {
-            var file = await _quickCampusService.GetAssignmentAwsUrl(filename);
-            return Redirect(file.Url);
+            if(string.IsNullOrEmpty(filename))
+            {
+                return RedirectToAction("Index");
+            }
+            var parts = filename.Split("___");
+            if (parts.Length < 2)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var _fileName = parts[1];
+            var file = await _quickCampusService.GetAssignmentAwsUrl(_fileName);
+            // get bytes from the URL
+            
+            var httpFact = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
+            var client = httpFact.CreateClient();
+            var response = await client.GetAsync(file.Url);
+            if (!response.IsSuccessStatusCode)
+            {
+                ViewData["ErrorMessage"] = "Failed to download the file.";
+                return View("Error");
+            }
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            if (fileBytes == null || fileBytes.Length == 0)
+            {
+                ViewData["ErrorMessage"] = "File is empty or not found.";
+                return View("Error");
+            }
+
+            return File(fileBytes, "application/octet-stream", filename);
         }
 
         [HttpPost]
-        public IActionResult Sync(int year, int month, string value)
+        public async Task<IActionResult> SyncHomework(int year, int month, string value)
         {
-            return Redirect(value ?? "/");
+            var studentName = SetStudentName();
+            var result = await _quickCampusService.SyncDataAsync(studentName, year, month, true);
+            if(!result.IsSuccess || result.SyncedData == null)
+            {
+                ViewData["ErrorMessage"] = result.Message;
+                return View("Error");
+            }
+
+            return View("Homework", result.SyncedData);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> SyncAssignment(int year, int month, string value)
+        {
+            var studentName = SetStudentName();
+            var result = await _quickCampusService.SyncDataAsync(studentName, year, month, true);
+            if (!result.IsSuccess || result.SyncedData == null)
+            {
+                ViewData["ErrorMessage"] = result.Message;
+                return View("Error");
+            }
+
+            return View("Assignment", result.SyncedData);
         }
 
 

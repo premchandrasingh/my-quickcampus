@@ -7,7 +7,7 @@ namespace My.QuickCampus.Data
         public static IServiceCollection AddSqliteDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             string connString = configuration.GetConnectionString("db_conn");
-            services.AddDbContext<SqliteDbContext>(options =>
+            services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlite(connString);
                 options.EnableSensitiveDataLogging(); // Enable this only for development purposes

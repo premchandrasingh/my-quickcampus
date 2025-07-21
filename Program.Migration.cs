@@ -14,7 +14,7 @@ namespace My.QuickCampus
                 _logger?.LogInformation("Starting database migration...");
                 try
                 {
-                    var context = scope.ServiceProvider.GetService<SqliteDbContext>();
+                    var context = scope.ServiceProvider.GetService<AppDbContext>();
                     context.Database.Migrate();
 
                     var anyStudent = context.Students.AnyAsync().GetAwaiter().GetResult();
@@ -37,6 +37,23 @@ namespace My.QuickCampus
                     {
                         _logger?.LogInformation("Migration students already exist...");
                     }
+
+                    var anyGrade = context.Grades.AnyAsync().GetAwaiter().GetResult();
+                    if (!anyGrade)
+                    {
+                        var lia = new Grade() { GradeId = 1, StudentId = 1, IsCurrentClass = true, Name = "V", Section = "A", DisplayName = "V (A)", };
+                        context.Grades.Add(lia);
+
+                        var leo = new Grade() { GradeId = 2, StudentId = 2, IsCurrentClass = true, Name = "III", Section = "D", DisplayName = "III (D)", };
+                        context.Grades.Add(leo);
+
+                        var lenin = new Grade() { GradeId = 3, StudentId = 3, IsCurrentClass = true, Name = "III", Section = "C", DisplayName = "III (C)", };
+                        context.Grades.Add(lenin);
+
+                        context.SaveChanges();
+
+                    }
+
 
                     _logger?.LogInformation("Database migration successful...");
                 }

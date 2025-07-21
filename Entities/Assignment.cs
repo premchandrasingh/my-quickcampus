@@ -1,5 +1,4 @@
-﻿using My.QuickCampus.QuickCampus;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace My.QuickCampus.Entities
 {
@@ -8,6 +7,10 @@ namespace My.QuickCampus.Entities
         public long AssignmentId { get; set; }
 
         public long GradeId { get; set; }
+
+        public int Year { get; set; }
+
+        public int Month { get; set; }
 
         #region QuickCampus Fields
         /// <summary>
@@ -22,7 +25,7 @@ namespace My.QuickCampus.Entities
         
         public string SubjectName { get; set; }
         
-        public string PostedDate { get; set; }
+        public DateOnly PostedDate { get; set; }
         
         public string Body { get; set; }
 

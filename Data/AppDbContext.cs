@@ -3,9 +3,9 @@ using My.QuickCampus.Entities;
 
 namespace My.QuickCampus.Data
 {
-    public class SqliteDbContext : DbContext
+    public class AppDbContext : DbContext
     {
-        public SqliteDbContext(DbContextOptions<SqliteDbContext> options)
+        public AppDbContext(DbContextOptions<AppDbContext> options)
           : base(options)
         {
         }
@@ -46,9 +46,17 @@ namespace My.QuickCampus.Data
                 entity.HasIndex(u => u.StudentId)
                     .HasDatabaseName("IX_Grade_StudentId");
 
+                entity.Property(u => u.IsCurrentClass)
+                    .IsRequired()
+                    .HasDefaultValue(false);
+
                 entity.Property(u => u.Name)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.Property(u => u.DisplayName)
+                  .IsRequired()
+                  .HasMaxLength(100);
 
                 entity.Property(u => u.Section)
                     .IsRequired()
@@ -150,6 +158,13 @@ namespace My.QuickCampus.Data
             #endregion
 
 
+            builder.Entity<QuickCampusSync>()
+             .HasOne(entity => entity.Grade)
+             .WithMany(user => user.QuickCampusSyncs)
+             .HasForeignKey(entity => entity.GradeId) // Explicit foreign key name added
+             .HasConstraintName("FK_QuickCampusSync_Grade_GradeId")
+             .IsRequired();
+
             builder.Entity<Grade>()
               .HasOne(entity => entity.Student)
               .WithMany(user => user.Grades)
@@ -162,28 +177,28 @@ namespace My.QuickCampus.Data
               .WithMany(his => his.Assignments)
               .HasForeignKey(entity => entity.GradeId) // Explicit foreign key name added
               .HasConstraintName("FK_Assignment_Grade_GradeId")
-              .IsRequired(false);
+              .IsRequired();
 
             builder.Entity<Homework>()
               .HasOne(entity => entity.Grade)
               .WithMany(his => his.Homeworks)
               .HasForeignKey(entity => entity.GradeId) // Explicit foreign key name added
               .HasConstraintName("FK_Homework_Grade_GradeId")
-              .IsRequired(false);
+              .IsRequired();
 
             builder.Entity<MediaFile>()
                .HasOne(entity => entity.Homework)
               .WithMany(his => his.MediaFiles)
               .HasForeignKey(entity => entity.MediaFileId) // Explicit foreign key name added
               .HasConstraintName("FK_MediaFile_Homework_MediaFileId")
-              .IsRequired();
+              .IsRequired(false);
 
             builder.Entity<MediaFile>()
              .HasOne(entity => entity.Assignment)
             .WithMany(his => his.MediaFiles)
             .HasForeignKey(entity => entity.MediaFileId) // Explicit foreign key name added
             .HasConstraintName("FK_MediaFile_Assignment_MediaFileId")
-            .IsRequired();
+            .IsRequired(false);
         }
 
 

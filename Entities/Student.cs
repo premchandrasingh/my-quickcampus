@@ -4,6 +4,9 @@
     {
         public long StudentId { get; set; }
 
+        /// <summary>
+        /// This id is important and will be used to make QuickCampus api call
+        /// </summary>
         public string QuickCampusId { get; set; }
 
         /// <summary>

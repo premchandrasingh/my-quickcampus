@@ -1,7 +1,11 @@
-﻿using My.QuickCampus.QuickCampus;
+﻿using Microsoft.EntityFrameworkCore;
+using My.QuickCampus.Data;
+using My.QuickCampus.Entities;
+using My.QuickCampus.QuickCampus;
+using My.QuickCampus.Result;
 using System.Net;
 
-namespace My.QuickCampus
+namespace My.QuickCampus.Services
 {
     public class QuickCampusService
     {
@@ -17,16 +21,19 @@ namespace My.QuickCampus
         private readonly ILogger _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AppDbContext _dbContext;
         private HttpContext _httpContext;
 
 
         public QuickCampusService(ILogger<QuickCampusService> logger
             , IHttpClientFactory httpClientFactory
-            , IHttpContextAccessor httpContextAccessor)
+            , IHttpContextAccessor httpContextAccessor
+            , AppDbContext dbContext)
         {
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
+            _dbContext = dbContext;
             _httpContext = _httpContextAccessor.HttpContext;
         }
 
@@ -37,7 +44,7 @@ namespace My.QuickCampus
             var lastDayOfMonth = DateTime.DaysInMonth(now.Year, now.Month);
 
             var _startDate = (startDate ?? new DateTime(now.Year, now.Month, 1)).ToString("dd-MM-yyyy");
-            var _endDate = (startDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
+            var _endDate = (endDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
             ;
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
@@ -62,6 +69,10 @@ namespace My.QuickCampus
                     _logger.LogError(ex, "Error deserializing QuickCampusApiResponse");
                 }
             }
+            else
+            {
+                _logger.LogWarning("Failed to fetch homework data. Status Code: {StatusCode}", response.StatusCode);
+            }
             return null;
         }
 
@@ -71,7 +82,7 @@ namespace My.QuickCampus
             var lastDayOfMonth = DateTime.DaysInMonth(now.Year, now.Month);
 
             var _startDate = (startDate ?? new DateTime(now.Year, now.Month, 1)).ToString("dd-MM-yyyy");
-            var _endDate = (startDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
+            var _endDate = (endDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
             ;
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
@@ -97,6 +108,10 @@ namespace My.QuickCampus
                     _logger.LogError(ex, "Error deserializing QuickCampusApiResponse");
                 }
             }
+            else
+            {
+                _logger.LogWarning("Failed to fetch assignment data. Status Code: {StatusCode}", response.StatusCode);
+            }
             return null;
         }
 
@@ -120,7 +135,7 @@ namespace My.QuickCampus
 
             using var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            var payload = new { fileName = fileName, tagname = type == "assigment" ? "academic-cms-assignment-doc" : "" };
+            var payload = new { fileName, tagname = type == "assigment" ? "academic-cms-assignment-doc" : "" };
             var response = await client.PutAsJsonAsync($"https://erpapi.quickcampus.online/users/aws-get-url", payload);
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -138,6 +153,94 @@ namespace My.QuickCampus
             return null;
         }
 
+
+        public async Task<SyncResult> SyncDataAsync(string studentName, int year, int month, bool isHomework)
+        {
+
+            var dbDrade = await _dbContext.Grades
+                .Where(x => x.Student.Name == studentName && x.IsCurrentClass)
+                .FirstOrDefaultAsync();
+
+            if (dbDrade == null)
+            {
+                _logger.LogWarning("No current grade found for student {StudentName}", studentName);
+                return null;
+            }
+
+            var syncType = isHomework ? "homework" : "assignment";
+
+            var currentYear = DateTime.Now.Year;
+            var currentMonth = DateTime.Now.Month;
+            var currentLastDayOfMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+            var currentEndDay = new DateTime(currentYear, currentMonth, currentLastDayOfMonth);
+
+            var lastDayOfMonth = DateTime.DaysInMonth(year, month);
+            var startDay = new DateTime(year, month, 1);
+            var endDay = new DateTime(year, month, lastDayOfMonth);
+
+            if (endDay >= currentEndDay)
+            {
+                _logger.LogWarning("Cannot sync data before month end {Year}-{Month}", year, month);
+                return SyncResult.Failed(syncType, SyncResult.FailedType.MonthNotEndError, $"Cannot sync data before month end ${year}-${month}");
+            }
+
+            var dbSyncRec = await _dbContext.QuickCampusSyncs
+               .Where(x => x.GradeId == dbDrade.GradeId && x.SourceYear == year && x.SourceMonth == month && x.SyncType == syncType)
+               .FirstOrDefaultAsync();
+
+            if (dbSyncRec != null)
+            {
+                _logger.LogWarning("Data already synced. {Year}-{Month}", year, month);
+                return SyncResult.Failed(syncType, SyncResult.FailedType.AlreadySynced, $"Data already synced. {year}-{month}");
+            }
+
+            QuickCampusApiResponse data = null;
+            var affected = 0;
+            if (isHomework)
+            {
+                data = await GetHomeWorkAsync(studentName, startDay, endDay);
+                var homeworks = data.Data.Select(x => x.ConvertToHomework(dbDrade.GradeId)).ToList();
+                if (homeworks.Count > 0)
+                {
+                    _dbContext.Homeworks.AddRange(homeworks);
+                    affected = await _dbContext.SaveChangesAsync();
+                }
+                _logger.LogInformation("Homework synced: {Count}", homeworks.Count);
+            }
+            else
+            {
+                data = await GetAssignmentAsync(studentName, startDay, endDay);
+                var assignments = data.Data.Select(x => x.ConvertToAssignment(dbDrade.GradeId)).ToList();
+                if (assignments.Count > 0)
+                {
+                    _dbContext.Assignments.AddRange(assignments);
+                    affected = await _dbContext.SaveChangesAsync();
+                }
+                _logger.LogInformation("Assignments synced: {Count}", assignments.Count);
+            }
+
+            if (affected > 0)
+            {
+                var syncRecord = new QuickCampusSync
+                {
+                    GradeId = dbDrade.GradeId,
+                    SourceYear = year,
+                    SourceMonth = month,
+                    SyncType = syncType,
+                    Status = "Success",
+                    Message = $"{affected} '{syncType.ToUpper()}' records synced successfully for {year}-{month}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _dbContext.QuickCampusSyncs.Add(syncRecord);
+                await _dbContext.SaveChangesAsync();
+
+                return SyncResult.Success(syncType, data, syncRecord.Message);
+            }
+
+            _logger.LogInformation("No '{SyncType}' record synced for {Year}-{Month}", syncType.ToUpper(), year, month);
+            return SyncResult.Success(syncType, null, $"No '{syncType.ToUpper()}' record synced.");
+        }
 
 
         public string GetToken()
@@ -180,6 +283,10 @@ namespace My.QuickCampus
                     PropertyNameCaseInsensitive = true,
                     PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
                 };
+                jsonOpt.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                jsonOpt.Converters.Add(new JsonDateOnlyConverter("dd-MM-yyyy"));
+                jsonOpt.Converters.Add(new JsonDateConverter("dd-MM-yyyy"));
+
                 return System.Text.Json.JsonSerializer.Deserialize<T>(content, jsonOpt);
             }
             catch (System.Text.Json.JsonException ex)
