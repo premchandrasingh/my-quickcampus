@@ -12,12 +12,12 @@
         <th>Images</th>
         <th>Docs</th>
     </tr>
-    
+
     @for (int i = 0, sl = Model.Data.Count(); i < Model.Data.Count(); i++, sl--)
     {
         <tr class="@(i % 2 == 0 ? "highlight" : "")">
             <td>@sl</td>
-            <td width="100">@Model.Data[i].PostedDate</td>
+            <td width="100">@Model.Data[i].PostedDate.ToString("yyyy-MM-dd")</td>
             <td>@Model.Data[i].SubjectName</td>
             <td>@Model.Data[i].Type</td>
             <td>@Model.Data[i].Title</td>
@@ -32,7 +32,9 @@
                                 @{
                                     var imageFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Images[j], j + 1);
                                 }
-                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type" asp-route-filename="@imageFileName" target="_blank" title="@imageFileName"><i class="bi bi-image"></i> View Image</a>
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type"
+                                    asp-route-filename="@imageFileName" target="_blank" title="@imageFileName"><i
+                                        class="bi bi-image"></i> View Image</a>
                             </li>
 
                         }
@@ -49,7 +51,9 @@
                                 @{
                                     var docFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Documents[j], j + 1);
                                 }
-                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type" asp-route-filename="@docFileName" title="@docFileName" target="_blank"><i class="bi bi-image"></i> View Doc</a>
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type"
+                                    asp-route-filename="@docFileName" title="@docFileName" target="_blank"><i
+                                        class="bi bi-image"></i> View Doc</a>
                             </li>
                         }
                     </ol>

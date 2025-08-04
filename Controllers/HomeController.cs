@@ -75,7 +75,6 @@ namespace My.QuickCampus.Controllers
             // get bytes from the URL
             var httpFact = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
             var client = httpFact.CreateClient();
-            //client.DefaultRequestHeaders.Add("referer", "https://erp.quickcampus.online/");
             var response = await client.GetAsync(file.Url);
             if (!response.IsSuccessStatusCode)
             {

@@ -115,7 +115,7 @@ namespace My.QuickCampus.Services
             return null;
         }
 
-       
+
         public async Task<QuickCampusAwsUrlApiResponse> GetHomeworkAwsUrl(string fileName)
         {
             return await GetAwsUrlAsync(fileName, "homework");
