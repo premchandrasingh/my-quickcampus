@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using My.QuickCampus.Models;
-using My.QuickCampus.QuickCampus;
 using My.QuickCampus.Services;
-using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace My.QuickCampus.Controllers
 {
@@ -52,12 +49,20 @@ namespace My.QuickCampus.Controllers
         }
 
 
-        public async Task<IActionResult> ViewFile(string filename)
+        public async Task<IActionResult> ViewFile(string filename, string type)
         {
-            if(string.IsNullOrEmpty(filename))
+            if (string.IsNullOrEmpty(filename) || string.IsNullOrEmpty(type))
             {
                 return RedirectToAction("Index");
             }
+
+            var _type = type.ToLowerInvariant();
+            if (_type != "homework" && _type != "assignment")
+            {
+                ViewData["ErrorMessage"] = "Invalid file type.";
+                return View("Error");
+            }
+
             var parts = filename.Split("___");
             if (parts.Length < 2)
             {
@@ -65,15 +70,16 @@ namespace My.QuickCampus.Controllers
             }
 
             var _fileName = parts[1];
-            var file = await _quickCampusService.GetAssignmentAwsUrl(_fileName);
+            var file = await _quickCampusService.GetAwsUrlAsync(_fileName, _type);
+
             // get bytes from the URL
-            
             var httpFact = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
             var client = httpFact.CreateClient();
+            //client.DefaultRequestHeaders.Add("referer", "https://erp.quickcampus.online/");
             var response = await client.GetAsync(file.Url);
             if (!response.IsSuccessStatusCode)
             {
-                ViewData["ErrorMessage"] = "Failed to download the file.";
+                ViewData["ErrorMessage"] = $"{response.StatusCode} - Failed to download the file.";
                 return View("Error");
             }
             var fileBytes = await response.Content.ReadAsByteArrayAsync();
@@ -91,7 +97,7 @@ namespace My.QuickCampus.Controllers
         {
             var studentName = SetStudentName();
             var result = await _quickCampusService.SyncDataAsync(studentName, year, month, true);
-            if(!result.IsSuccess || result.SyncedData == null)
+            if (!result.IsSuccess || result.SyncedData == null)
             {
                 ViewData["ErrorMessage"] = result.Message;
                 return View("Error");
@@ -142,7 +148,7 @@ namespace My.QuickCampus.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new ErrorViewModel { ErrorCode = "Error", ErrorMessage = "An error occured." });
         }
 
     }

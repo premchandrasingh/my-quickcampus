@@ -115,17 +115,18 @@ namespace My.QuickCampus.Services
             return null;
         }
 
+       
         public async Task<QuickCampusAwsUrlApiResponse> GetHomeworkAwsUrl(string fileName)
         {
-            return await GetAwsUrl(fileName, "homework");
+            return await GetAwsUrlAsync(fileName, "homework");
         }
 
         public async Task<QuickCampusAwsUrlApiResponse> GetAssignmentAwsUrl(string fileName)
         {
-            return await GetAwsUrl(fileName, "assigment");
+            return await GetAwsUrlAsync(fileName, "assigment");
         }
 
-        private async Task<QuickCampusAwsUrlApiResponse> GetAwsUrl(string fileName, string type = "assigment")
+        public async Task<QuickCampusAwsUrlApiResponse> GetAwsUrlAsync(string fileName, string type = "assigment")
         {
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
@@ -135,7 +136,7 @@ namespace My.QuickCampus.Services
 
             using var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            var payload = new { fileName, tagname = type == "assigment" ? "academic-cms-assignment-doc" : "" };
+            var payload = new { fileName, tagname = type == "assigment" ? "academic-cms-assignment-doc" : "academic-cms-homework-doc" };
             var response = await client.PutAsJsonAsync($"https://erpapi.quickcampus.online/users/aws-get-url", payload);
             if (response.StatusCode == HttpStatusCode.OK)
             {

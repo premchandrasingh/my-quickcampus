@@ -12,20 +12,20 @@
 
         private static Dictionary<string, string> _typeMaping = new Dictionary<string, string>
         {
-            { "homework", "hm" },
+            { "homework", "hw" },
             { "assignment", "asgmt" },
         };
 
         private static Dictionary<string, string> _classMaping = new Dictionary<string, string>
         {
-            { "iii", "III" },
-            { "iii-c", "III" },
-            { "iii-d", "III" },
-            { "v-a", "V" },
-            { "v", "V" },
+            { "iii", "iii" },
+            { "iii-c", "iii" },
+            { "iii-d", "iii" },
+            { "v-a", "v" },
+            { "v", "v" },
         };
 
-        public static string GetDownloadInfo(this QuickCampusApiResponseItem dateItem, string fileName, int fileCount)
+        public static string GetDownloadInfo(this QuickCampusApiResponseItem dateItem, int serial, string fileName, int fileCount)
         {
             var date = dateItem.PostedDate.ToString("yyyy_MM_dd");
 
@@ -48,7 +48,8 @@
                 subject = dateItem.SubjectName.ToLowerInvariant();
             }
 
-            return $"{date}__{studentClass}__{type}__{subject}_{fileCount}___{fileName}";
+            // WARNING: Dont change this file format specially where ___ is because actual file name is extracted by spliting with ___.
+            return $"{serial}__{type}__{studentClass}__{date}__{subject}_{fileCount}___{fileName}";
         }
 
     }

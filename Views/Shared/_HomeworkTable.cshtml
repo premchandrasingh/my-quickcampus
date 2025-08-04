@@ -12,11 +12,11 @@
         <th>Images</th>
         <th>Docs</th>
     </tr>
-
-    @for (var i = 0; i < Model.Data.Count(); i++)
+    
+    @for (int i = 0, sl = Model.Data.Count(); i < Model.Data.Count(); i++, sl--)
     {
         <tr class="@(i % 2 == 0 ? "highlight" : "")">
-            <td>@(i + 1)</td>
+            <td>@sl</td>
             <td width="100">@Model.Data[i].PostedDate</td>
             <td>@Model.Data[i].SubjectName</td>
             <td>@Model.Data[i].Type</td>
@@ -30,9 +30,9 @@
                         {
                             <li>
                                 @{
-                                    var imageFileName = @Model.Data[i].GetDownloadInfo(Model.Data[i].Images[j], j + 1);
+                                    var imageFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Images[j], j + 1);
                                 }
-                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@imageFileName" target="_blank" title="@imageFileName"><i class="bi bi-image"></i> View Image</a>
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type" asp-route-filename="@imageFileName" target="_blank" title="@imageFileName"><i class="bi bi-image"></i> View Image</a>
                             </li>
 
                         }
@@ -47,9 +47,9 @@
                         {
                             <li>
                                 @{
-                                    var docFileName = @Model.Data[i].GetDownloadInfo(Model.Data[i].Documents[j], j + 1);
+                                    var docFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Documents[j], j + 1);
                                 }
-                                <a asp-controller="Home" asp-action="ViewFile" asp-route-filename="@docFileName" title="@docFileName" target="_blank"><i class="bi bi-image"></i> View Doc</a>
+                                <a asp-controller="Home" asp-action="ViewFile" asp-route-type="@Model.Data[i].Type" asp-route-filename="@docFileName" title="@docFileName" target="_blank"><i class="bi bi-image"></i> View Doc</a>
                             </li>
                         }
                     </ol>
