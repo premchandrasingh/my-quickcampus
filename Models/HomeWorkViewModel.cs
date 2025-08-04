@@ -1,20 +1,17 @@
-﻿namespace My.QuickCampus.Models
+﻿using My.QuickCampus.QuickCampus;
+
+namespace My.QuickCampus.Models
 {
     public class HomeWorkViewModel
     {
-        public string Date { get; set; }
 
-        public string Subject { get; set; }
+        public QuickCampusApiResponse  Response { get; set; }
 
-        public string Type { get; set; }
+        public string StudentName { get; set; }
 
-        public string Title { get; set; }
+        public string CaptureFileName { get; set; }
 
-        public string Body { get; set; }
-
-        public string[] Images { get; set; }
-
-        public string[] Documents { get; set; }
+        public string QueryTime { get; set; }
 
     }
 }

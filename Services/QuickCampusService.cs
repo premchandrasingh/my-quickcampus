@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using My.QuickCampus.Data;
 using My.QuickCampus.Entities;
+using My.QuickCampus.Models;
 using My.QuickCampus.QuickCampus;
 using My.QuickCampus.Result;
 using System.Net;
@@ -11,6 +12,7 @@ namespace My.QuickCampus.Services
     {
         private const string TOKEN_COOKIENAME = "quickcampus_token";
         private const string STUDENT_COOKIENAME = "student_name";
+        private int? OVERRIDE_MONTH = null; // This is only to conviniently override the current month by a hardcoded choosen one
         private Dictionary<string, string> _studentMap = new Dictionary<string, string>()
         {
             { "lia", "31090e22-1408-4cac-9faf-6fc6df06de26" },
@@ -37,15 +39,23 @@ namespace My.QuickCampus.Services
             _httpContext = _httpContextAccessor.HttpContext;
         }
 
-        public async Task<QuickCampusApiResponse> GetHomeWorkAsync(string student, DateTime? startDate = null, DateTime? endDate = null)
+        private string FormatDate(DateTime date, string format = null)
+        {
+            return date.ToString(format ?? "yyyy-MM-dd");
+        }
+
+        public async Task<HomeWorkViewModel> GetHomeWorkAsync(string student, DateTime? startDate = null, DateTime? endDate = null)
         {
             // c224de9e-459c-4890-a438-41e8415082ea
             var now = DateTime.Now;
-            var lastDayOfMonth = DateTime.DaysInMonth(now.Year, now.Month);
+            var month = OVERRIDE_MONTH ?? now.Month;
+            var lastDayOfMonth = DateTime.DaysInMonth(now.Year, month);
 
-            var _startDate = (startDate ?? new DateTime(now.Year, now.Month, 1)).ToString("dd-MM-yyyy");
-            var _endDate = (endDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
-            ;
+            startDate = startDate ?? new DateTime(now.Year, month, 1);
+            endDate = endDate ?? new DateTime(now.Year, month, lastDayOfMonth);
+            var _startDate = FormatDate(startDate.Value, "dd-MM-yyyy");
+            var _endDate = FormatDate(endDate.Value, "dd-MM-yyyy");
+
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
             {
@@ -62,7 +72,13 @@ namespace My.QuickCampus.Services
                 try
                 {
                     var data = Deserialize<QuickCampusApiResponse>(content);
-                    return data;
+                    return new HomeWorkViewModel()
+                    {
+                        StudentName = student,
+                        CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                        QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
+                        Response = data
+                    };
                 }
                 catch (System.Text.Json.JsonException ex)
                 {
@@ -73,17 +89,26 @@ namespace My.QuickCampus.Services
             {
                 _logger.LogWarning("Failed to fetch homework data. Status Code: {StatusCode}", response.StatusCode);
             }
-            return null;
+            return new HomeWorkViewModel()
+            {
+                StudentName = student,
+                CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
+                Response = QuickCampusApiResponse.GetEmptyResponse()
+            };
         }
 
-        public async Task<QuickCampusApiResponse> GetAssignmentAsync(string student, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<HomeWorkViewModel> GetAssignmentAsync(string student, DateTime? startDate = null, DateTime? endDate = null)
         {
             var now = DateTime.Now;
-            var lastDayOfMonth = DateTime.DaysInMonth(now.Year, now.Month);
+            var month = OVERRIDE_MONTH ?? now.Month;
+            var lastDayOfMonth = DateTime.DaysInMonth(now.Year, month);
 
-            var _startDate = (startDate ?? new DateTime(now.Year, now.Month, 1)).ToString("dd-MM-yyyy");
-            var _endDate = (endDate ?? new DateTime(now.Year, now.Month, lastDayOfMonth)).ToString("dd-MM-yyyy");
-            ;
+            startDate = startDate ?? new DateTime(now.Year, month, 1);
+            endDate = endDate ?? new DateTime(now.Year, month, lastDayOfMonth);
+            var _startDate = FormatDate(startDate.Value, "dd-MM-yyyy");
+            var _endDate = FormatDate(endDate.Value, "dd-MM-yyyy");
+
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
             {
@@ -101,7 +126,13 @@ namespace My.QuickCampus.Services
                 try
                 {
                     var data = Deserialize<QuickCampusApiResponse>(content);
-                    return data;
+                    return new HomeWorkViewModel()
+                    {
+                        StudentName = student,
+                        CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                        QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
+                        Response = data
+                    };
                 }
                 catch (System.Text.Json.JsonException ex)
                 {
@@ -112,7 +143,14 @@ namespace My.QuickCampus.Services
             {
                 _logger.LogWarning("Failed to fetch assignment data. Status Code: {StatusCode}", response.StatusCode);
             }
-            return null;
+
+            return new HomeWorkViewModel()
+            {
+                StudentName = student,
+                CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
+                Response = QuickCampusApiResponse.GetEmptyResponse()
+            };
         }
 
 
@@ -123,10 +161,10 @@ namespace My.QuickCampus.Services
 
         public async Task<QuickCampusAwsUrlApiResponse> GetAssignmentAwsUrl(string fileName)
         {
-            return await GetAwsUrlAsync(fileName, "assigment");
+            return await GetAwsUrlAsync(fileName, "assignment");
         }
 
-        public async Task<QuickCampusAwsUrlApiResponse> GetAwsUrlAsync(string fileName, string type = "assigment")
+        public async Task<QuickCampusAwsUrlApiResponse> GetAwsUrlAsync(string fileName, string taskType = "assignment", string fileType = "pdf")
         {
             var token = GetToken();
             if (string.IsNullOrEmpty(token))
@@ -136,7 +174,14 @@ namespace My.QuickCampus.Services
 
             using var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            var payload = new { fileName, tagname = type == "assigment" ? "academic-cms-assignment-doc" : "academic-cms-homework-doc" };
+
+            var tagname = taskType == "assignment" ? "academic-cms-assignment-doc" : "academic-cms-homework-doc";
+            if (fileType == "img")
+            {
+                tagname = taskType == "assignment" ? "academic-cms-assignment-img" : "academic-cms-homework-img";
+            }
+            
+            var payload = new { fileName, tagname = tagname };
             var response = await client.PutAsJsonAsync($"https://erpapi.quickcampus.online/users/aws-get-url", payload);
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -199,7 +244,7 @@ namespace My.QuickCampus.Services
             var affected = 0;
             if (isHomework)
             {
-                data = await GetHomeWorkAsync(studentName, startDay, endDay);
+                data = (await GetHomeWorkAsync(studentName, startDay, endDay)).Response;
                 var homeworks = data.Data.Select(x => x.ConvertToHomework(dbDrade.GradeId)).ToList();
                 if (homeworks.Count > 0)
                 {
@@ -210,7 +255,7 @@ namespace My.QuickCampus.Services
             }
             else
             {
-                data = await GetAssignmentAsync(studentName, startDay, endDay);
+                data = (await GetAssignmentAsync(studentName, startDay, endDay)).Response;
                 var assignments = data.Data.Select(x => x.ConvertToAssignment(dbDrade.GradeId)).ToList();
                 if (assignments.Count > 0)
                 {

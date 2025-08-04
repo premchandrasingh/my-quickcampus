@@ -1,6 +1,25 @@
-﻿@{
+﻿@model My.QuickCampus.Models.HomeWorkViewModel
+
+@{
     ViewData["Title"] = "Assignment";
+    ViewData["CaptureTarget"] = "task-list";
+    ViewData["CaptureFileName"] = Model.CaptureFileName;
 }
-<partial name="_HomeworkTable" model="Model" />
+<div id="task-list">
+    <div class="container text-center pb-3">
+        <div class="row h5">
+            <div class="col">
+                Assignment
+            </div>
+            <div class="col">
+                @Model.StudentName
+            </div>
+            <div class="col">
+                @Model.QueryTime
+            </div>
+        </div>
+    </div>
 
+    <partial name="_HomeworkTable" model="Model.Response" />
 
+</div>

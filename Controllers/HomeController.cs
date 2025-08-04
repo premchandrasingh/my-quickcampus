@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using My.QuickCampus.Models;
+using My.QuickCampus.QuickCampus;
 using My.QuickCampus.Services;
 
 namespace My.QuickCampus.Controllers
@@ -32,14 +33,14 @@ namespace My.QuickCampus.Controllers
         {
             var studentName = SetStudentName();
 
-            var homewordks = await _quickCampusService.GetHomeWorkAsync(studentName);
+            HomeWorkViewModel homewordks = await _quickCampusService.GetHomeWorkAsync(studentName);
             return View(homewordks);
         }
 
         public async Task<IActionResult> Assignment()
         {
             var studentName = SetStudentName();
-            var assigments = await _quickCampusService.GetAssignmentAsync(studentName);
+            HomeWorkViewModel assigments = await _quickCampusService.GetAssignmentAsync(studentName);
             return View(assigments);
         }
 
@@ -49,15 +50,16 @@ namespace My.QuickCampus.Controllers
         }
 
 
-        public async Task<IActionResult> ViewFile(string filename, string type)
+        public async Task<IActionResult> ViewFile(string filename, string taskType, string fileType)
         {
-            if (string.IsNullOrEmpty(filename) || string.IsNullOrEmpty(type))
+            if (string.IsNullOrEmpty(filename) || string.IsNullOrEmpty(taskType))
             {
                 return RedirectToAction("Index");
             }
+            fileType = fileType ?? "pdf";
 
-            var _type = type.ToLowerInvariant();
-            if (_type != "homework" && _type != "assignment")
+            var _taskType = taskType.ToLowerInvariant();
+            if (_taskType != "homework" && _taskType != "assignment")
             {
                 ViewData["ErrorMessage"] = "Invalid file type.";
                 return View("Error");
@@ -70,7 +72,7 @@ namespace My.QuickCampus.Controllers
             }
 
             var _fileName = parts[1];
-            var file = await _quickCampusService.GetAwsUrlAsync(_fileName, _type);
+            var file = await _quickCampusService.GetAwsUrlAsync(_fileName, _taskType, fileType);
 
             // get bytes from the URL
             var httpFact = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();

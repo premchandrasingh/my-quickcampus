@@ -9,6 +9,16 @@ namespace My.QuickCampus.QuickCampus
         public int TotalRecords { get; set; }
 
         public List<QuickCampusApiResponseItem> Data { get; set; }
+
+        public static QuickCampusApiResponse GetEmptyResponse()
+        {
+            return new QuickCampusApiResponse
+            {
+                Message = "No data found.",
+                TotalRecords = 0,
+                Data = new List<QuickCampusApiResponseItem>()
+            };
+        }
     }
 
     public class QuickCampusApiResponseItem
