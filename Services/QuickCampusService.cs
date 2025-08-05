@@ -75,7 +75,7 @@ namespace My.QuickCampus.Services
                     return new HomeWorkViewModel()
                     {
                         StudentName = student,
-                        CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                        CaptureFileName = $"{student.ToLower()}_homework_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
                         QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
                         Response = data
                     };
@@ -92,7 +92,7 @@ namespace My.QuickCampus.Services
             return new HomeWorkViewModel()
             {
                 StudentName = student,
-                CaptureFileName = $"{student.ToLower()}_asgmt_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
+                CaptureFileName = $"{student.ToLower()}_homework_{FormatDate(startDate.Value)}__{FormatDate(endDate.Value)}.png",
                 QueryTime = $"{FormatDate(startDate.Value)} -TO- {FormatDate(endDate.Value)}",
                 Response = QuickCampusApiResponse.GetEmptyResponse()
             };
