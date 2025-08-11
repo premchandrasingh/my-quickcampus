@@ -144,6 +144,37 @@ namespace My.QuickCampus.Controllers
 
             return Redirect(value);
         }
+        [HttpGet]
+        public IActionResult CompressPdf()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult CompressPdf(string filePath)
+        {
+            // https://github.com/iron-software/IronPdf.Examples/blob/main/how-to/pdf-compression/section3.cs
+
+            PdfDocument pdf = PdfDocument.FromFile(filePath);
+            CompressionOptions compressionOptions = new CompressionOptions();
+
+            // Configure image compression
+            compressionOptions.CompressImages = true;
+            compressionOptions.JpegQuality = 70;
+            compressionOptions.HighQualityImageSubsampling = false;
+            compressionOptions.ShrinkImages = true;
+            // Configure tree structure compression
+            compressionOptions.RemoveStructureTree = true;
+
+            pdf.Compress(compressionOptions);
+
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+            var outputPath = Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, $"{fileNameWithoutExtension}_compressed.pdf");
+            pdf.SaveAs(outputPath);
+
+            return View();
+        }
+
 
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Compress Pdf";
+}
+
+<form class="row g-3" method="post" asp-controller="Home" asp-action="CompressPdf">
+    <div class="col-auto">
+        <label for="staticEmail2" class="visually-hidden">File</label>
+    </div>
+    <div class="col-6">
+        <label for="filePath" class="visually-hidden">File path</label>
+        <input type="text" class="form-control" id="filePath" name="filePath" width="400" placeholder="Full file path">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary mb-3">Compress</button>
+    </div>
+</form>

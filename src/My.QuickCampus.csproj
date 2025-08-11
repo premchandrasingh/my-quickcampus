@@ -8,6 +8,7 @@
 
   <ItemGroup>
 	  <!-- To run the command `dotnet ef migrations add Initial -c SqliteDbContext`, "Microsoft.EntityFrameworkCore.Design"  packages are required -->
+	  <PackageReference Include="IronPdf" Version="2025.7.17" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.18">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
