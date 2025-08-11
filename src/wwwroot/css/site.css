@@ -70,10 +70,33 @@ body {
         background-color: #e0ffff;
     }
 
+    .tftable tr.new-work td {
+        background-color: #e1f330;
+    }
+
 td.desc {
     font-size: 16px
 }
 
 #task-list{
     border: 2px solid #808080;
+}
+
+th.w110 {
+    width: 110px;
+}
+th.w120{
+    width:120px;
+}
+th.w130 {
+    width: 130px;
+}
+th.w140 {
+    width: 140px;
+}
+th.w150 {
+    width: 150px;
+}
+th.w200 {
+    width: 200px;
 }

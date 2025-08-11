@@ -139,34 +139,15 @@
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="text/javascript">
-            $(document).ready(function() {
-            $('#captureScreen').click(function() {
-                html2canvas(document.querySelector("#@captureTargetId")).then(canvas => {
-                    // The 'canvas' object now contains the rendered image of your div.
-                    // You can append it to the body, convert it to an image, or save it.
-
-                    // Example: Appending the canvas to the body
-                    //document.body.appendChild(canvas);
-
-                    // Example: Converting to a data URL (e.g., for saving or displaying in an <img>)
-                    let imageDataURL = canvas.toDataURL("image/png");
-                    //console.log(imageDataURL); // Log the data URL
-
-                    const link = document.createElement('a')
-                    link.href = imageDataURL
-                    link.download = '@captureFileName'
-                    document.body.appendChild(link)
-                    link.click()
-                    document.body.removeChild(link)
-                });
-            });
-        });
+        // These variable will be used inside the site.js
+        const captureTargetId = "#@captureTargetId"; 
+        const captureFileName = "@captureFileName";
     </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
+   
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
