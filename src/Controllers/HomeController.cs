@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using My.QuickCampus.Models;
-using My.QuickCampus.QuickCampus;
 using My.QuickCampus.Services;
 
 namespace My.QuickCampus.Controllers
@@ -122,7 +121,17 @@ namespace My.QuickCampus.Controllers
             return View("Assignment", result.SyncedData);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DirectLogin(string value)
+        {
+            var result = await _quickCampusService.GetTokenAsnc("lia");
+            if (result.IsSuccess)
+                _quickCampusService.SetToken(result.AcccessToken);
+            else
+                return ErrorPrivate(new ErrorViewModel { ErrorCode = "LoginError", ErrorMessage = result.ErrorMessage });
 
+            return Redirect(value ?? "/");
+        }
 
         [HttpPost]
         public IActionResult SaveToken(SaveTokenBindingModel model, string value)
@@ -180,8 +189,15 @@ namespace My.QuickCampus.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { ErrorCode = "Error", ErrorMessage = "An error occured." });
+            return ErrorPrivate(new ErrorViewModel { ErrorCode = "Error", ErrorMessage = "An error occured." });
         }
+
+        private IActionResult ErrorPrivate(ErrorViewModel model)
+        {
+            return View("Error", model);
+        }
+
+
 
     }
 }

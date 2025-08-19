@@ -30,12 +30,16 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Assignment">Assignment</a>
                         </li>
-
                         <li class="nav-item">
+                            <form class="header-control" method="post" asp-controller="Home" asp-action="DirectLogin" asp-route-value="@Url.RouteUrl(ViewContext.RouteData.Values)">
+                                <button type="submit" class="btn btn-sm btn-primary">Login & Start</button>
+                            </form>
+                        </li>
+                       @*  <li class="nav-item">
                             <form class="header-control" method="post" asp-controller="Home" asp-action="SaveToken" asp-route-value="@Url.RouteUrl(ViewContext.RouteData.Values)">
                                 <input type="text" class="input-token" name="Token" placeholder="QuickCampus Token" /> <button type="submit" class="btn btn-sm btn-primary">Save Token</button>
                             </form>
-                        </li>
+                        </li> *@
                         <li class="nav-item">
                             <div style="padding-left:10px;">
                                 <form class="header-control" method="post" asp-controller="Home" asp-route-value="@Url.RouteUrl(ViewContext.RouteData.Values)">

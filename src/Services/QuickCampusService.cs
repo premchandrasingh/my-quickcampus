@@ -5,6 +5,7 @@ using My.QuickCampus.Models;
 using My.QuickCampus.QuickCampus;
 using My.QuickCampus.Result;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace My.QuickCampus.Services
 {
@@ -18,6 +19,12 @@ namespace My.QuickCampus.Services
             { "lia", "31090e22-1408-4cac-9faf-6fc6df06de26" },
             { "leo", "f321032d-0af6-4379-ad5a-09a880518855" },
             { "lenin", "c224de9e-459c-4890-a438-41e8415082ea" }
+        };
+        private Dictionary<string, string> _studentUserNameMap = new Dictionary<string, string>()
+        {
+            { "lia", "BVN908_13610" },
+            { "leo", "BVN908_14365" },
+            { "lenin", "BVN908_14366" }
         };
 
         private readonly ILogger _logger;
@@ -42,6 +49,87 @@ namespace My.QuickCampus.Services
         private string FormatDate(DateTime date, string format = null)
         {
             return date.ToString(format ?? "yyyy-MM-dd");
+        }
+
+        public async Task<LoginResponse> LoginAsnc()
+        {
+            var payload = new
+            {
+                userName = "9911950345",
+                password = "HS0lt2IcgzX7I6Bm3/7J3A==",
+                appType = ""
+            };
+            using var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("origin", "https://erp.quickcampus.online");
+            client.DefaultRequestHeaders.Add("referer", "https://erp.quickcampus.online/");
+            client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36");
+            var payloadStr = Serialize(payload);
+            var jsonContent = new StringContent(payloadStr, System.Text.Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://erpapi.quickcampus.online/user/authenticate", jsonContent);
+            var content = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                try
+                {
+                    var data = Deserialize<QuickCampusLoginApiResponse>(content);
+                    return LoginResponse.Success(data);
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    _logger.LogError(ex, "Error deserializing QuickCampusLoginApiResponse");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Failed to login. Status Code: {StatusCode}", response.StatusCode);
+            }
+
+            return LoginResponse.Failed($"Failed to login. Status Code: {response.StatusCode}");
+        }
+
+        public async Task<TokenResponse> GetTokenAsnc(string student, string deviceId = "97cdbce1-9d4e-4fe4-a97b-5c728e244d37")
+        {
+            var tokenResult = await LoginAsnc();
+            if(!tokenResult.IsSuccess)
+                return TokenResponse.Failed(tokenResult.ErrorMessage);
+
+            var studentUserName = _studentUserNameMap.GetValueOrDefault(student.ToLowerInvariant(), null);
+            var payload = new AuthorizePayloadModel()
+            {
+                authenticationToken = tokenResult.AuthenticationToken,
+                //deviceId = "",
+                deviceToken = null,
+                securityPin = "",
+                userName = studentUserName
+            };
+            using var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("origin", "https://erp.quickcampus.online");
+            client.DefaultRequestHeaders.Add("referer", "https://erp.quickcampus.online/");
+            client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36");
+            //client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+            var payloadStr = Serialize(payload);
+            var jsonContent = new StringContent(payloadStr, System.Text.Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://erpapi.quickcampus.online/user/authorize", jsonContent);
+            var content = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                try
+                {
+                    var data = Deserialize<QuickCampusTokenApiResponse>(content);
+                    return TokenResponse.Success(data);
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    _logger.LogError(ex, "Error deserializing QuickCampusTokenApiResponse");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Failed to get tokan. Status Code: {StatusCode}", response.StatusCode);
+            }
+
+            return TokenResponse.Failed($"Failed to get tokan. Status Code: {response.StatusCode}");
         }
 
         public async Task<HomeWorkViewModel> GetHomeWorkAsync(string student, DateTime? startDate = null, DateTime? endDate = null)
@@ -180,7 +268,7 @@ namespace My.QuickCampus.Services
             {
                 tagname = taskType == "assignment" ? "academic-cms-assignment-img" : "academic-cms-homework-img";
             }
-            
+
             var payload = new { fileName, tagname = tagname };
             var response = await client.PutAsJsonAsync($"https://erpapi.quickcampus.online/users/aws-get-url", payload);
             if (response.StatusCode == HttpStatusCode.OK)
@@ -319,6 +407,15 @@ namespace My.QuickCampus.Services
             _httpContext.Response.Cookies.Append(STUDENT_COOKIENAME, studentName, cookieOptions);
         }
 
+        private string Serialize(object value)
+        {
+            var jsonOpt = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            };
+            return System.Text.Json.JsonSerializer.Serialize(value, jsonOpt);
+        }
 
         private T Deserialize<T>(string content)
         {
