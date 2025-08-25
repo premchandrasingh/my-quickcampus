@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using My.QuickCampus.Models;
 using My.QuickCampus.Services;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
+using PdfSharpCore.Pdf.IO;
 
 namespace My.QuickCampus.Controllers
 {
@@ -49,7 +52,7 @@ namespace My.QuickCampus.Controllers
         }
 
 
-        public async Task<IActionResult> ViewFile(string filename, string taskType, string fileType)
+        public async Task<IActionResult> ViewFile(string filename, string taskType, string fileType, string title)
         {
             if (string.IsNullOrEmpty(filename) || string.IsNullOrEmpty(taskType))
             {
@@ -87,6 +90,48 @@ namespace My.QuickCampus.Controllers
             {
                 ViewData["ErrorMessage"] = "File is empty or not found.";
                 return View("Error");
+            }
+
+            // Add file name to the downloaded pdf file
+            if (Path.GetExtension(_fileName).ToLower() == ".pdf")
+            {
+                try
+                {
+                    PdfDocument pdfDocument = PdfReader.Open(new MemoryStream(fileBytes), PdfDocumentOpenMode.Modify, PdfSharpCore.Pdf.IO.enums.PdfReadAccuracy.Moderate);
+                    // Get the first page of the document.
+                    PdfPage page = pdfDocument.Pages[0];
+                    // Create a graphics object to draw on the page.
+                    XGraphics gfx = XGraphics.FromPdfPage(page);
+
+                    // Define the font and size.
+                    XFont font = new XFont("Arial", 10, XFontStyle.Regular);
+
+                    parts = filename.Split("__", 4);
+                    // Define the text to be added.
+                    string text = filename;
+                    if (parts.Length >= 3)
+                        text = $"{parts[2]}:- {filename}";
+
+                    int xPos = 35;
+                    // Draw the text on the page.
+                    gfx.DrawString(text, font, XBrushes.Red, new XPoint(xPos, 25));
+                    if (!string.IsNullOrEmpty(title))
+                    {
+                        var bgWidth = gfx.MeasureString(title, font).Width;
+                        gfx.DrawRectangle(XBrushes.Yellow, xPos, 30, bgWidth, 15);
+                        gfx.DrawString(title, font, XBrushes.Red, new XPoint(xPos, 40));
+                    }
+
+                    _logger.LogInformation("File name added to the downloaded pdf file - {filename}", text);
+                    
+                    var stream2 = new MemoryStream();
+                    pdfDocument.Save(stream2, true);
+                    return File(stream2.ToArray(), "application/octet-stream", filename);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("FAILED to add file name to the downloaded pdf file. Error - {error}", ex.Message);
+                }
             }
 
             return File(fileBytes, "application/octet-stream", filename);
@@ -159,13 +204,14 @@ namespace My.QuickCampus.Controllers
             return View();
         }
 
+        /*
         [HttpPost]
         public IActionResult CompressPdf(string filePath)
         {
             // https://github.com/iron-software/IronPdf.Examples/blob/main/how-to/pdf-compression/section3.cs
 
-            PdfDocument pdf = PdfDocument.FromFile(filePath);
-            CompressionOptions compressionOptions = new CompressionOptions();
+            var pdf = IronPdf.PdfDocument.FromFile(filePath);
+            var compressionOptions = new IronPdf.CompressionOptions();
 
             // Configure image compression
             compressionOptions.CompressImages = true;
@@ -183,6 +229,7 @@ namespace My.QuickCampus.Controllers
 
             return View();
         }
+        */
 
 
 

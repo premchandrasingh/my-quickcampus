@@ -35,7 +35,7 @@
                                     var imageFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Images[j], j + 1);
                                 }
                                 <a asp-controller="Home" asp-action="ViewFile" asp-route-taskType="@Model.Data[i].Type" asp-route-fileType="img"
-                                   asp-route-filename="@imageFileName" target="_blank" title="@imageFileName">
+                                   asp-route-filename="@imageFileName" asp-route-title="@Model.Data[i].Title" target="_blank" title="@imageFileName">
                                     <i class="bi bi-image"></i> View Image
                                 </a>
                             </li>
@@ -55,7 +55,7 @@
                                     var docFileName = @Model.Data[i].GetDownloadInfo(sl, Model.Data[i].Documents[j], j + 1);
                                 }
                                 <a asp-controller="Home" asp-action="ViewFile" asp-route-taskType="@Model.Data[i].Type" asp-route-fileType="pdf"
-                                   asp-route-filename="@docFileName" title="@docFileName" target="_blank">
+                                   asp-route-filename="@docFileName" asp-route-title="@Model.Data[i].Title" title="@docFileName" target="_blank">
                                     <i class="bi bi-image"></i> View Doc
                                 </a>
                             </li>
