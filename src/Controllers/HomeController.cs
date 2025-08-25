@@ -75,6 +75,11 @@ namespace My.QuickCampus.Controllers
 
             var _fileName = parts[1];
             var file = await _quickCampusService.GetAwsUrlAsync(_fileName, _taskType, fileType);
+            if (file == null || string.IsNullOrEmpty(file.Url))
+            {
+                _logger.LogError("Failed to get file name from AWS. {filename}", _fileName);
+                return ErrorPrivate($"Failed to get file name from AWS. {_fileName}", "GetAwsUrlFailed");
+            }
 
             // get bytes from the URL
             var httpFact = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
@@ -82,14 +87,12 @@ namespace My.QuickCampus.Controllers
             var response = await client.GetAsync(file.Url);
             if (!response.IsSuccessStatusCode)
             {
-                ViewData["ErrorMessage"] = $"{response.StatusCode} - Failed to download the file.";
-                return View("Error");
+                return ErrorPrivate($"{response.StatusCode} - Failed to download the file.", "AWSFileDownloadFailed");
             }
             var fileBytes = await response.Content.ReadAsByteArrayAsync();
             if (fileBytes == null || fileBytes.Length == 0)
             {
-                ViewData["ErrorMessage"] = "File is empty or not found.";
-                return View("Error");
+                return ErrorPrivate("File is empty or not found.", "EmptyFile");
             }
 
             // Add file name to the downloaded pdf file
@@ -112,18 +115,20 @@ namespace My.QuickCampus.Controllers
                     if (parts.Length >= 3)
                         text = $"{parts[2]}:- {filename}";
 
+                    XColor customColor = XColor.FromArgb(181, 230, 29); // custom light green color
+                    var textBg = parts[0] == "iii" ? new XSolidBrush(customColor) : XBrushes.Yellow;
                     int xPos = 35;
                     // Draw the text on the page.
                     gfx.DrawString(text, font, XBrushes.Red, new XPoint(xPos, 25));
                     if (!string.IsNullOrEmpty(title))
                     {
                         var bgWidth = gfx.MeasureString(title, font).Width;
-                        gfx.DrawRectangle(XBrushes.Yellow, xPos, 30, bgWidth, 15);
+                        gfx.DrawRectangle(textBg, xPos, 30, bgWidth, 15);
                         gfx.DrawString(title, font, XBrushes.Red, new XPoint(xPos, 40));
                     }
 
                     _logger.LogInformation("File name added to the downloaded pdf file - {filename}", text);
-                    
+
                     var stream2 = new MemoryStream();
                     pdfDocument.Save(stream2, true);
                     return File(stream2.ToArray(), "application/octet-stream", filename);
@@ -144,8 +149,7 @@ namespace My.QuickCampus.Controllers
             var result = await _quickCampusService.SyncDataAsync(studentName, year, month, true);
             if (!result.IsSuccess || result.SyncedData == null)
             {
-                ViewData["ErrorMessage"] = result.Message;
-                return View("Error");
+                return ErrorPrivate(result.Message);
             }
 
             return View("Homework", result.SyncedData);
@@ -159,8 +163,8 @@ namespace My.QuickCampus.Controllers
             var result = await _quickCampusService.SyncDataAsync(studentName, year, month, true);
             if (!result.IsSuccess || result.SyncedData == null)
             {
-                ViewData["ErrorMessage"] = result.Message;
-                return View("Error");
+                return ErrorPrivate(result.Message);
+
             }
 
             return View("Assignment", result.SyncedData);
@@ -173,7 +177,7 @@ namespace My.QuickCampus.Controllers
             if (result.IsSuccess)
                 _quickCampusService.SetToken(result.AcccessToken);
             else
-                return ErrorPrivate(new ErrorViewModel { ErrorCode = "LoginError", ErrorMessage = result.ErrorMessage });
+                return ErrorPrivate(result.ErrorMessage, "LoginError");
 
             return Redirect(value ?? "/");
         }
@@ -236,12 +240,12 @@ namespace My.QuickCampus.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return ErrorPrivate(new ErrorViewModel { ErrorCode = "Error", ErrorMessage = "An error occured." });
+            return ErrorPrivate("An error occured.");
         }
 
-        private IActionResult ErrorPrivate(ErrorViewModel model)
+        private IActionResult ErrorPrivate(string errorMessage, string errorCode = "Error")
         {
-            return View("Error", model);
+            return View("Error", new ErrorViewModel() { ErrorMessage = errorMessage, ErrorCode = errorCode });
         }
 
 
